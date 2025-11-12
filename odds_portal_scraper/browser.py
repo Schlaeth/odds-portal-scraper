@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import random
 from dataclasses import dataclass
@@ -292,9 +293,10 @@ class PlaywrightBrowser:
         return page
 
     async def _configure_page(self, page: Page, fingerprint: Dict[str, object]) -> None:
-        await page.add_init_script(
-            script="""
-            ({fingerprint}) => {
+        fingerprint_json = json.dumps(fingerprint)
+        script_template = """
+        (() => {
+            const fingerprint = __FINGERPRINT__;
                 Object.defineProperty(navigator, 'webdriver', { get: () => false });
                 localStorage.setItem('isTeamPageModalClosed', 'true');
 
@@ -361,10 +363,10 @@ class PlaywrightBrowser:
                             : originalQuery(parameters)
                     );
                 }
-            }
-            """,
-            arg={"fingerprint": fingerprint},
-        )
+        })();
+        """
+        script = script_template.replace("__FINGERPRINT__", fingerprint_json)
+        await page.add_init_script(script=script)
 
     async def close(self) -> None:
         for page in list(self._pages):

@@ -20,7 +20,7 @@ async def discover_season_pages(page: Page, season_url: str) -> List[str]:
     except Exception:
         logger.info("no pagination detected for %s", season_url)
 
-    base_url = page.url().split('#')[0]
+    base_url = page.url.split('#')[0]
     if not page_numbers:
         return [base_url]
 
