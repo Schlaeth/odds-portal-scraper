@@ -5,9 +5,14 @@ from __future__ import annotations
 import asyncio
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any, Awaitable, Callable
 
-import boto3
+try:  # pragma: no cover - allow tests to run without boto3 installed
+    import boto3  # type: ignore
+except ImportError:  # pragma: no cover
+    boto3 = SimpleNamespace(client=None)  # type: ignore[assignment]
+
 from botocore.exceptions import BotoCoreError, ClientError
 
 from .logger import logger
@@ -17,6 +22,9 @@ CallbackType = Callable[[Any, str], Awaitable[None]]
 
 def export_to_s3(bucket_name: str) -> CallbackType:
     """Return an async exporter that uploads JSON documents to S3."""
+
+    if getattr(boto3, "client", None) is None:
+        raise RuntimeError("boto3 is required for S3 exports. Install the 'boto3' package.")
 
     s3_client = boto3.client("s3")
 
