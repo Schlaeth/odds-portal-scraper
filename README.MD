@@ -51,11 +51,12 @@ odds-portal [COMMAND] [OPTIONS]
 | `odds-format`    | Print the supported odds format keys/descriptions |
 
 Both scraping commands require one export target: `--local <dir>` or `--s3 <bucket>`.
+League keys follow the pattern `<slug>-<division>` (for example `premier-league-1`, `bundesliga-2`).
 
 ### Historic example
 
 ```bash
-odds-portal historic premier-league 2020 2023 \
+odds-portal historic premier-league-1 2020 2023 \
   --odds-format eu \
   --local ./output
 ```
@@ -63,7 +64,7 @@ odds-portal historic premier-league 2020 2023 \
 ### Next matches example
 
 ```bash
-odds-portal next-matches bundesliga \
+odds-portal next-matches bundesliga-1 \
   --odds-format eu \
   --s3 my-odds-dump \
   --limit 5
@@ -92,7 +93,7 @@ Each match produces a JSON file named `<date>-<home>-<away>.json` containing met
 ```json
 {
   "scrapedAt": "2024-05-04 08:33:12",
-  "leagueName": "premier-league",
+  "leagueName": "premier-league-1",
   "day": "Saturday",
   "date": "2024-05-04",
   "homeTeam": "Arsenal",

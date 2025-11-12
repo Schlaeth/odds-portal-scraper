@@ -3,7 +3,7 @@ import pytest
 
 
 def test_get_historic_urls_variable_structure():
-    urls = get_historic_urls("premier-league", 2020, 2021)
+    urls = get_historic_urls("premier-league-1", 2020, 2021)
     assert urls == [
         "https://www.oddsportal.com/soccer/england/premier-league-2020-2021/results/",
         "https://www.oddsportal.com/soccer/england/premier-league-2021-2022/results/",
@@ -11,7 +11,7 @@ def test_get_historic_urls_variable_structure():
 
 
 def test_get_historic_urls_fixed_structure():
-    urls = get_historic_urls("mls", 2020, 2021)
+    urls = get_historic_urls("mls-1", 2020, 2021)
     assert urls == [
         "https://www.oddsportal.com/football/usa/mls-2020/results/",
         "https://www.oddsportal.com/football/usa/mls-2021/results/",

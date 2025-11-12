@@ -9,8 +9,8 @@ runner = CliRunner()
 @pytest.mark.parametrize(
     "command",
     [
-        ["historic", "premier-league", "2022", "2020", "--odds-format", "eu", "--local", "out"],
-        ["next-matches", "premier-league", "--odds-format", "eu", "--local", "out", "--s3", "bucket"],
+        ["historic", "premier-league-1", "2022", "2020", "--odds-format", "eu", "--local", "out"],
+        ["next-matches", "premier-league-1", "--odds-format", "eu", "--local", "out", "--s3", "bucket"],
     ],
 )
 def test_cli_validation_errors(monkeypatch, command):
@@ -33,7 +33,7 @@ def test_cli_requires_output(monkeypatch):
 
     result = runner.invoke(
         app,
-        ["historic", "premier-league", "2020", "2021", "--odds-format", "eu"],
+        ["historic", "premier-league-1", "2020", "2021", "--odds-format", "eu"],
     )
     assert result.exit_code != 0
     assert "One of --s3 or --local" in result.output
@@ -42,5 +42,5 @@ def test_cli_requires_output(monkeypatch):
 def test_soccer_leagues_lists_known_entries():
     result = runner.invoke(app, ["soccer-leagues"])
     assert result.exit_code == 0
-    assert "premier-league" in result.output
-    assert "bundesliga" in result.output
+    assert "premier-league-1" in result.output
+    assert "bundesliga-1" in result.output
