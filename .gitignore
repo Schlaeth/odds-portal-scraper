@@ -6,3 +6,10 @@ next_matches/
 repomix.config.json
 repomix-output.md
 .repomixignore
+# Python artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+.pytest_cache/
+.venv/
