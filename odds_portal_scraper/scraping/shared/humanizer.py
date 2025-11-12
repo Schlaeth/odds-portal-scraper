@@ -36,9 +36,13 @@ def merge_humanize_config(overrides: Dict[str, Any] | None) -> Dict[str, Any]:
     return merged
 
 
+async def _noop(*_args, **_kwargs):
+    return None
+
+
 def create_humanizer(page: Page, config: Dict[str, Any]):
     if not config.get("enabled"):
-        return {"before_action": lambda *_: None}
+        return {"before_action": _noop}
 
     state = {"initialized": False, "mouse": {"x": 0, "y": 0}}
 
