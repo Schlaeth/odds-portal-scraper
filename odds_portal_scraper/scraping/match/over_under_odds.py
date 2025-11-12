@@ -101,7 +101,7 @@ async def _reload_with_retry(page: Page) -> None:
     for attempt in range(1, RELOAD_RETRY["max_attempts"] + 1):
         try:
             response = await page.reload(wait_until="domcontentloaded")
-            status = response.status() if response else None
+            status = response.status if response else None
             if status and status in RELOAD_RETRY["status_codes"]:
                 if attempt == RELOAD_RETRY["max_attempts"]:
                     raise RuntimeError(f"HTTP {status}")

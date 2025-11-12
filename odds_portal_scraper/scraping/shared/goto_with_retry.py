@@ -44,7 +44,7 @@ async def goto_with_retry(
         attempts += 1
         try:
             response = await page.goto(url, **(goto_options or {"wait_until": "domcontentloaded"}))
-            status = response.status() if response else None
+            status = response.status if response else None
             if not status or status not in config.status_codes:
                 return response
             last_error = RuntimeError(f"HTTP {status}")
