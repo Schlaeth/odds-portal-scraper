@@ -9,7 +9,7 @@ description = "CLI tool for scraping soccer odds from oddsportal.com"
 readme = "README.MD"
 requires-python = ">=3.10"
 authors = [{ name = "" }]
-license = { text = "ISC" }
+license = "ISC"
 dependencies = [
     "typer>=0.9,<1.0",
     "rich>=13.7,<14.0",
@@ -26,6 +26,9 @@ dev = [
 
 [project.scripts]
 odds-portal = "odds_portal_scraper.cli:app"
+
+[tool.setuptools.packages.find]
+include = ["odds_portal_scraper*"]
 
 [tool.pytest.ini_options]
 addopts = "-q"
