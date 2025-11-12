@@ -1,213 +1,116 @@
+# Odds Portal Scraper (Python)
 
-# Odds Portal Scraper CLI
-
-Odds Portal Scraper CLI is a powerful command line tool for extracting soccer odds data from [Odds Portal](https://www.oddsportal.com/). It supports scraping both historical and upcoming match odds across multiple leagues and formats, with flexible export options and robust error handling.
-
+Python rewrite of the Odds Portal CLI: scrape historical or upcoming soccer odds from [oddsportal.com](https://www.oddsportal.com) and export them either locally or to Amazon S3. The tool now ships as a Typer CLI powered by Playwright's async API.
 
 ## Features
 
-- Scrape historical odds data for specified date ranges
-- Scrape odds for upcoming matches
-- Supports multiple soccer leagues and odds formats (EU, UK, US, etc.)
-- Export data to local files (JSON) or directly to AWS S3 buckets
-- Built with Playwright for fast and reliable scraping
-- Configurable logging and error handling
-- Automatic retries and input validation
+- Scrape historic season ranges or the next scheduled matches for a supported league.
+- Change odds representation (EU, UK, US, HK, MA, IN) on the fly before scraping.
+- Export JSON payloads directly to disk or upload them to S3.
+- Randomised Playwright fingerprints + retries that mimic the original Node.js behaviour.
+- Rich-powered tables for listing leagues / formats and structured logging.
 
+## Requirements
+
+- Python 3.10+
+- Node-free environment (Playwright Python package downloads its own browser build).
+- AWS credentials configured in your shell when using the S3 exporter.
+- Optional proxy configuration through `ODDS_PORTAL_PROXY_URL`.
+
+After installing dependencies you must download the Playwright browser once:
+
+```bash
+playwright install chromium
+```
 
 ## Installation
 
-### Prerequisites
-
-- Node.js (v18 or higher)
-- npm or yarn
-- AWS CLI configured (for S3 exports, if using S3)
-
-
-### Install via npm
+Clone the repo and install the package:
 
 ```bash
-npm install -g odds-portal-scraper
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install --upgrade pip
+pip install -e .[dev]
+playwright install chromium
 ```
 
-### Install via yarn
-
-```bash
-yarn global add odds-portal-scraper
-```
-
+This exposes an `odds-portal` console script.
 
 ## Usage
 
-### Command Overview
-
-```bash
-odds-portal [command] [options]
+```
+odds-portal [COMMAND] [OPTIONS]
 ```
 
-#### Available Commands
+| Command          | Description                                   |
+| ---------------- | --------------------------------------------- |
+| `historic`       | Scrape odds for historic seasons              |
+| `next-matches`   | Scrape upcoming matches                       |
+| `soccer-leagues` | Print the supported league keys and URLs      |
+| `odds-format`    | Print the supported odds format keys/descriptions |
 
-| Command         | Description                                      |
-|-----------------|--------------------------------------------------|
-| historic        | Scrape historical odds data for a league         |
-| next-matches    | Scrape odds for upcoming matches in a league     |
-| soccer-leagues  | List all available soccer leagues                |
-| odds-format     | List all supported odds formats                  |
+Both scraping commands require one export target: `--local <dir>` or `--s3 <bucket>`.
 
-
-### Command Details
-
-#### Historic Odds
-
-Scrape historical odds data for a specified league and date range.
+### Historic example
 
 ```bash
-odds-portal historic <leagueName> <startYear> <endYear> [options]
+odds-portal historic premier-league 2020 2023 \
+  --odds-format eu \
+  --local ./output
 ```
 
-**Parameters:**
-
-- `leagueName`: Name of the league (use `soccer-leagues` to list options)
-- `startYear`: Starting year for historical data (e.g., 2020)
-- `endYear`: Ending year for historical data (e.g., 2023)
-
-**Options:**
-
-| Option          | Description                                      |
-|-----------------|--------------------------------------------------|
-| --odds-format   | Odds format (default: EU)                        |
-| --local         | Local directory to save JSON files                |
-| --s3            | S3 bucket name to upload data                     |
-
-**Example:**
+### Next matches example
 
 ```bash
-odds-portal historic premier-league 2020 2023 --local ./data --odds-format eu
+odds-portal next-matches bundesliga \
+  --odds-format eu \
+  --s3 my-odds-dump \
+  --limit 5
 ```
 
-
-#### Next Matches
-
-Scrape odds for upcoming matches in a specified league.
-
-```bash
-odds-portal next-matches <leagueName> [options]
-```
-
-**Parameters:**
-
-- `leagueName`: Name of the league (use `soccer-leagues` to list options)
-
-**Options:**
-
-| Option          | Description                                      |
-|-----------------|--------------------------------------------------|
-| --odds-format   | Odds format (default: EU)                        |
-| --local         | Local directory to save JSON files                |
-| --s3            | S3 bucket name to upload data                     |
-
-**Example:**
-
-```bash
-odds-portal next-matches premier-league --local ./data --odds-format eu
-```
-
-This will scrape odds for upcoming matches in the English Premier League.
-
-
-#### Soccer Leagues
-
-List all available soccer leagues for scraping.
+### Listing helpers
 
 ```bash
 odds-portal soccer-leagues
-```
-
-
-#### Odds Formats
-
-List all supported odds formats.
-
-```bash
 odds-portal odds-format
 ```
 
-
 ## Configuration
 
-### Environment Variables
+| Variable               | Purpose                                        |
+| ---------------------- | ---------------------------------------------- |
+| `ODDS_PORTAL_PROXY_URL`| Optional HTTP proxy passed to Playwright       |
+| `AWS_ACCESS_KEY_ID`    | AWS credential for the S3 exporter             |
+| `AWS_SECRET_ACCESS_KEY`| Pair to the access key above                   |
+| `LOG_LEVEL`            | Set when invoking the CLI via `--log-level`    |
 
-Set the following environment variables as needed:
+## Data output
 
-| Variable               | Description                                      |
-|------------------------|--------------------------------------------------|
-| ODDS_PORTAL_PROXY_URL  | Proxy URL for scraping (optional)                |
-| AWS_ACCESS_KEY_ID      | AWS access key for S3 exports                    |
-| AWS_SECRET_ACCESS_KEY  | AWS secret key for S3 exports                    |
-
-
-## Data Structure
-
-Scraped data is saved in JSON format with the following structure:
+Each match produces a JSON file named `<date>-<home>-<away>.json` containing metadata, three-way moneyline odds (full/first/second half) and over/under 1.5/2.5/3.5 markets. Example fields:
 
 ```json
 {
-  "scrapedAt": "2023-10-15 14:30:00",
-  "day": "Sunday",
-  "date": "2023-10-15",
-  "time": "14:00",
-  "homeTeam": "Manchester United",
-  "awayTeam": "Liverpool",
-  "mlFirstHalf": [
-    {
-      "bookMakerName": "Bet365",
-      "hw": "2.10",
-      "d": "3.25",
-      "aw": "3.50"
-    }
-  ],
-  "mlSecondHalf": [...],
-  "mlFullTime": [...],
+  "scrapedAt": "2024-05-04 08:33:12",
   "leagueName": "premier-league",
-  "underOver25": [
-    {
-      "bookmakerName": "Bet365",
-      "oddsOver": "1.80",
-      "oddsUnder": "2.00"
-    }
-  ],
-  "underOver15": [...],
-  "underOver35": [...]
+  "day": "Saturday",
+  "date": "2024-05-04",
+  "homeTeam": "Arsenal",
+  "awayTeam": "Chelsea",
+  "mlFullTime": [ { "bookMakerName": "Bet365", "hw": "1.92", "d": "3.40", "aw": "4.00" } ],
+  "underOver25": [ { "bookmakerName": "Bet365", "oddsOver": "1.91", "oddsUnder": "1.99" } ]
 }
 ```
 
+## Development
 
-## Error Handling
+- Lint/format with your preferred tooling (the project relies on standard library modules only).
+- Run tests with `pytest` (Playwright/browser interactions are mocked in the suite):
 
-Odds Portal Scraper CLI includes comprehensive error handling:
-
-- Automatic retries for failed requests
-- Detailed error logging
-- Graceful shutdown on critical errors
-- Input parameter validation
-
-
-## Contributing
-
-Contributions are welcome! To contribute:
-
-1. Fork the repository
-2. Create a new branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to your branch (`git push origin feature/your-feature`)
-5. Open a Pull Request
-
+```bash
+pytest
+```
 
 ## License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-
-## Support
-
-For support or feature requests, please open an issue on the [GitHub repository](https://github.com/your-repo/odds-portal-scraper).
+Distributed under the ISC license (same as the upstream project).
