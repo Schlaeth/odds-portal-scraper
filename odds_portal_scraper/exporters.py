@@ -49,15 +49,19 @@ def export_to_s3(bucket_name: str) -> CallbackType:
     return _export
 
 
-def export_to_dir(directory: str | Path) -> CallbackType:
+def export_to_dir(directory: str | Path, *, skip_existing: bool = False) -> CallbackType:
     """Return an async exporter that writes JSON files locally."""
 
     target_dir = Path(directory)
     target_dir.mkdir(parents=True, exist_ok=True)
 
     async def _export(data: Any, file_name: str) -> None:
-        payload = json.dumps(data, ensure_ascii=False, indent=2)
         destination = target_dir / file_name
+        if skip_existing and destination.exists():
+            logger.info("Skipping existing file %s", destination)
+            return
+
+        payload = json.dumps(data, ensure_ascii=False, indent=2)
 
         def _write() -> None:
             destination.write_text(payload, encoding="utf-8")
