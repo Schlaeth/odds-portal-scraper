@@ -74,7 +74,7 @@ async def _read_participants(page: Page) -> Tuple[str, str]:
     except Exception:
         pass
 
-    derived = _parse_participants_from_url(page.url())
+    derived = _parse_participants_from_url(page.url)
     if derived:
         return derived
 
