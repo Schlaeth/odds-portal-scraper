@@ -52,6 +52,7 @@ odds-portal [COMMAND] [OPTIONS]
 
 Both scraping commands require one export target: `--local <dir>` or `--s3 <bucket>`.
 League keys follow the pattern `<slug>-<division>` (for example `premier-league-1`, `bundesliga-2`).
+Use `--no-all-bookies` if you want to skip clicking the “All” bookies filter (scraping is faster but returns only the default subset shown by OddsPortal).
 
 ### Historic example
 
@@ -67,7 +68,8 @@ odds-portal historic premier-league-1 2020 2023 \
 odds-portal next-matches bundesliga-1 \
   --odds-format eu \
   --s3 my-odds-dump \
-  --limit 5
+  --limit 5 \
+  --no-all-bookies
 ```
 
 ### Listing helpers
