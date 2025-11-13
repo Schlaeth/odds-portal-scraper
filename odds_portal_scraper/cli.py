@@ -47,11 +47,25 @@ def historic(
     odds_format: str = typer.Option(..., "--odds-format", "-o", help="Desired odds format"),
     s3: Optional[str] = typer.Option(None, help="S3 bucket to upload JSON files"),
     local: Optional[Path] = typer.Option(None, help="Local directory to save JSON files"),
+    all_bookies: bool = typer.Option(
+        True,
+        "--all-bookies/--no-all-bookies",
+        help="Toggle the \"All\" bookies filter before scraping each market",
+    ),
 ):
     if start_year > end_year:
         raise typer.BadParameter("start_year must be less than or equal to end_year")
     exporter = _resolve_exporter(s3, local)
-    _run_async(historic_odds(league_name, start_year, end_year, odds_format, exporter))
+    _run_async(
+        historic_odds(
+            league_name,
+            start_year,
+            end_year,
+            odds_format,
+            exporter,
+            activate_all_bookies=all_bookies,
+        )
+    )
 
 
 @app.command(name="next-matches")
@@ -61,9 +75,22 @@ def next_matches_cmd(
     s3: Optional[str] = typer.Option(None, help="S3 bucket to upload JSON files"),
     local: Optional[Path] = typer.Option(None, help="Local directory to save JSON files"),
     limit: Optional[int] = typer.Option(None, help="Limit number of matches to scrape"),
+    all_bookies: bool = typer.Option(
+        True,
+        "--all-bookies/--no-all-bookies",
+        help="Toggle the \"All\" bookies filter before scraping each market",
+    ),
 ):
     exporter = _resolve_exporter(s3, local)
-    _run_async(next_matches(league_name, odds_format, exporter, limit))
+    _run_async(
+        next_matches(
+            league_name,
+            odds_format,
+            exporter,
+            limit,
+            activate_all_bookies=all_bookies,
+        )
+    )
 
 
 @app.command(name="soccer-leagues")
