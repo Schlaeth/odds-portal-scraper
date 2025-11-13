@@ -28,15 +28,15 @@ MARKET_LABELS = {
 }
 
 
-async def extract_over_under_odds(page: Page, total: str) -> List[Dict[str, str]]:
+async def extract_over_under_odds(page: Page, total: str, activate_all: bool = True) -> List[Dict[str, str]]:
     wanted = MARKET_LABELS.get(total)
     if not wanted:
         raise ValueError(f"Unsupported market total {total}")
 
     logger.info("scrapping odd for under/over %s market", total)
 
-    await _prepare_market(page, total, wanted)
-    await _ensure_odds_loaded(page, total, wanted)
+    await _prepare_market(page, total, wanted, activate_all)
+    await _ensure_odds_loaded(page, total, wanted, activate_all)
 
     rows = await page.query_selector_all(ROW_SELECTOR)
     results: List[Dict[str, str]] = []
@@ -78,22 +78,23 @@ async def extract_over_under_odds(page: Page, total: str) -> List[Dict[str, str]
     return results
 
 
-async def _prepare_market(page: Page, total: str, wanted_label: str) -> None:
+async def _prepare_market(page: Page, total: str, wanted_label: str, activate_all: bool) -> None:
     tab = page.locator(MARKET_TABS_SELECTOR).first
     await dispatch_click(tab)
     logger.info("click successful, waiting for market options to load...")
-    await activate_all_bookies_filter(page)
+    if activate_all:
+        await activate_all_bookies_filter(page)
     await _select_market_option(page, total, wanted_label)
     logger.info("click successful, waiting for %s odds to load...", wanted_label)
 
 
-async def _ensure_odds_loaded(page: Page, total: str, wanted_label: str) -> None:
+async def _ensure_odds_loaded(page: Page, total: str, wanted_label: str, activate_all: bool) -> None:
     try:
         await page.wait_for_selector(WAIT_SELECTOR)
     except PlaywrightTimeoutError:
         logger.warning("timeout waiting for %s odds. Reloading page and retrying once.", wanted_label)
         await _reload_with_retry(page)
-        await _prepare_market(page, total, wanted_label)
+        await _prepare_market(page, total, wanted_label, activate_all)
         await page.wait_for_selector(WAIT_SELECTOR)
 
 

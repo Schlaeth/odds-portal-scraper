@@ -24,9 +24,19 @@ async def historic_odds(
     end_year: int,
     odds_format: str,
     on_result: Callback,
+    *,
+    activate_all_bookies: bool = True,
 ) -> None:
     async def _command(browser):
-        await historic_scraper(browser, league_name, start_year, end_year, odds_format, on_result)
+        await historic_scraper(
+            browser,
+            league_name,
+            start_year,
+            end_year,
+            odds_format,
+            on_result,
+            activate_all_bookies=activate_all_bookies,
+        )
 
     await _run_with_browser(_command)
 
@@ -36,9 +46,18 @@ async def next_matches(
     odds_format: str,
     on_result: Callback,
     limit: Optional[int] = None,
+    *,
+    activate_all_bookies: bool = True,
 ) -> None:
     async def _command(browser):
-        await next_matches_scraper(browser, league_name, odds_format, on_result, limit)
+        await next_matches_scraper(
+            browser,
+            league_name,
+            odds_format,
+            on_result,
+            limit,
+            activate_all_bookies=activate_all_bookies,
+        )
 
     await _run_with_browser(_command)
 

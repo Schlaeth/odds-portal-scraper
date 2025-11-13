@@ -52,6 +52,7 @@ async def scrape_match(
     humanize_config = merge_humanize_config(opts.get("humanize"))
     humanizer = create_humanizer(page, humanize_config)
     run_action = create_action_runner(page, action_delay_ms, action_retry, humanizer)
+    activate_all_bookies = bool(opts.get("all_bookies", True))
 
     url = f"{BASE_URL}{link}"
 
@@ -59,17 +60,26 @@ async def scrape_match(
         await goto_with_retry(page, url, retry=retry)
         metadata = await run_action("match metadata", lambda: extract_match_metadata(page))
         ml_full = await run_action(
-            "moneyline odds (full time)", lambda: extract_moneyline_odds(page, "fullTime")
+            "moneyline odds (full time)",
+            lambda: extract_moneyline_odds(page, "fullTime", activate_all_bookies),
         )
         ml_first = await run_action(
-            "moneyline odds (first half)", lambda: extract_moneyline_odds(page, "firstHalf")
+            "moneyline odds (first half)",
+            lambda: extract_moneyline_odds(page, "firstHalf", activate_all_bookies),
         )
         ml_second = await run_action(
-            "moneyline odds (second half)", lambda: extract_moneyline_odds(page, "secondHalf")
+            "moneyline odds (second half)",
+            lambda: extract_moneyline_odds(page, "secondHalf", activate_all_bookies),
         )
-        ou_25 = await run_action("over/under odds (2.5)", lambda: extract_over_under_odds(page, "2.5"))
-        ou_15 = await run_action("over/under odds (1.5)", lambda: extract_over_under_odds(page, "1.5"))
-        ou_35 = await run_action("over/under odds (3.5)", lambda: extract_over_under_odds(page, "3.5"))
+        ou_25 = await run_action(
+            "over/under odds (2.5)", lambda: extract_over_under_odds(page, "2.5", activate_all_bookies)
+        )
+        ou_15 = await run_action(
+            "over/under odds (1.5)", lambda: extract_over_under_odds(page, "1.5", activate_all_bookies)
+        )
+        ou_35 = await run_action(
+            "over/under odds (3.5)", lambda: extract_over_under_odds(page, "3.5", activate_all_bookies)
+        )
 
         scraped_at = current_timestamp()
         data = {

@@ -39,6 +39,7 @@ async def collect_match_data(
     limit: int | None = None,
     throttle=None,
     match_retry: Dict | None = None,
+    activate_all_bookies: bool = True,
 ) -> AsyncGenerator[Dict, None]:
     await set_odds_format(page, odds_format)
     links = await collect_match_links(page, limit)
@@ -55,6 +56,7 @@ async def collect_match_data(
                 league_name,
                 {
                     "retry": match_retry,
+                    "all_bookies": activate_all_bookies,
                 },
             )
             yield result
