@@ -19,7 +19,7 @@ PERIOD_INDEX = {
 }
 
 
-async def extract_moneyline_odds(page: Page, period: str) -> List[Dict[str, str | None]]:
+async def extract_moneyline_odds(page: Page, period: str, activate_all: bool = True) -> List[Dict[str, str | None]]:
     logger.info("scrapping odds for three way market (%s)", period)
     await page.wait_for_selector(MONEYLINE_BUTTON_SELECTOR)
     buttons = await page.locator(MONEYLINE_BUTTON_SELECTOR).element_handles()
@@ -28,7 +28,8 @@ async def extract_moneyline_odds(page: Page, period: str) -> List[Dict[str, str 
         raise ValueError(f"Unknown odd type: {period}")
 
     await dispatch_click(buttons[index])
-    await activate_all_bookies_filter(page)
+    if activate_all:
+        await activate_all_bookies_filter(page)
     await page.wait_for_selector('div[data-testid="odd-container"] p.odds-text')
 
     rows = await page.query_selector_all(ROW_SELECTOR)

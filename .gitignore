@@ -6,6 +6,8 @@ next_matches/
 repomix.config.json
 repomix-output.md
 .repomixignore
+# Scraped odds output
+odds/
 # Python artifacts
 __pycache__/
 *.py[cod]
