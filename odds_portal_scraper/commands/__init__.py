@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Awaitable, Callable, Optional
 
 from ..browser import launch_browser
@@ -26,6 +27,7 @@ async def historic_odds(
     on_result: Callback,
     *,
     activate_all_bookies: bool = True,
+    skip_existing_dir: Path | None = None,
 ) -> None:
     async def _command(browser):
         await historic_scraper(
@@ -36,6 +38,7 @@ async def historic_odds(
             odds_format,
             on_result,
             activate_all_bookies=activate_all_bookies,
+            skip_existing_dir=skip_existing_dir,
         )
 
     await _run_with_browser(_command)
@@ -48,6 +51,7 @@ async def next_matches(
     limit: Optional[int] = None,
     *,
     activate_all_bookies: bool = True,
+    skip_existing_dir: Path | None = None,
 ) -> None:
     async def _command(browser):
         await next_matches_scraper(
@@ -57,6 +61,7 @@ async def next_matches(
             on_result,
             limit,
             activate_all_bookies=activate_all_bookies,
+            skip_existing_dir=skip_existing_dir,
         )
 
     await _run_with_browser(_command)

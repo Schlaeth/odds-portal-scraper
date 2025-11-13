@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import typer
 from rich.console import Console
@@ -12,20 +12,26 @@ from rich.table import Table
 
 from .commands import historic_odds, next_matches
 from .constants import LEAGUES_URLS_MAP, ODDS_FORMAT_MAP
-from .exporters import export_to_dir, export_to_s3
+from .exporters import CallbackType, export_to_dir, export_to_s3
 from .logger import configure_logger
 
 app = typer.Typer(help="Scrape soccer odds from oddsportal.com")
 console = Console()
 
 
-def _resolve_exporter(s3_bucket: Optional[str], local_dir: Optional[Path]):
+def _resolve_exporter(
+    s3_bucket: Optional[str],
+    local_dir: Optional[Path],
+    *,
+    skip_existing: bool = False,
+) -> Tuple[CallbackType, Optional[Path]]:
     if s3_bucket and local_dir:
         raise typer.BadParameter("Cannot use both --s3 and --local options. Choose one.")
     if s3_bucket:
-        return export_to_s3(s3_bucket)
+        return export_to_s3(s3_bucket), None
     if local_dir:
-        return export_to_dir(local_dir)
+        skip_dir: Optional[Path] = local_dir if skip_existing else None
+        return export_to_dir(local_dir, skip_existing=skip_existing), skip_dir
     raise typer.BadParameter("One of --s3 or --local must be provided")
 
 
@@ -52,10 +58,15 @@ def historic(
         "--all-bookies/--no-all-bookies",
         help="Toggle the \"All\" bookies filter before scraping each market",
     ),
+    skip_existing: bool = typer.Option(
+        True,
+        "--skip-existing/--no-skip-existing",
+        help="When exporting locally, skip matches whose JSON file already exists",
+    ),
 ):
     if start_year > end_year:
         raise typer.BadParameter("start_year must be less than or equal to end_year")
-    exporter = _resolve_exporter(s3, local)
+    exporter, skip_dir = _resolve_exporter(s3, local, skip_existing=skip_existing)
     _run_async(
         historic_odds(
             league_name,
@@ -64,6 +75,7 @@ def historic(
             odds_format,
             exporter,
             activate_all_bookies=all_bookies,
+            skip_existing_dir=skip_dir,
         )
     )
 
@@ -80,8 +92,13 @@ def next_matches_cmd(
         "--all-bookies/--no-all-bookies",
         help="Toggle the \"All\" bookies filter before scraping each market",
     ),
+    skip_existing: bool = typer.Option(
+        True,
+        "--skip-existing/--no-skip-existing",
+        help="When exporting locally, skip matches whose JSON file already exists",
+    ),
 ):
-    exporter = _resolve_exporter(s3, local)
+    exporter, skip_dir = _resolve_exporter(s3, local, skip_existing=skip_existing)
     _run_async(
         next_matches(
             league_name,
@@ -89,6 +106,7 @@ def next_matches_cmd(
             exporter,
             limit,
             activate_all_bookies=all_bookies,
+            skip_existing_dir=skip_dir,
         )
     )
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Awaitable, Callable
 
 from ...logger import logger
@@ -19,6 +20,7 @@ async def historic_scraper(
     on_result: Callable[[dict, str], Awaitable[None]],
     *,
     activate_all_bookies: bool = True,
+    skip_existing_dir: Path | None = None,
 ) -> None:
     season_urls = get_historic_urls(league_name, start_year, end_year)
 
@@ -37,6 +39,7 @@ async def historic_scraper(
                     league_name=league_name,
                     odds_format=odds_format,
                     activate_all_bookies=activate_all_bookies,
+                    skip_existing_dir=skip_existing_dir,
                 ):
                     await on_result(result["data"], result["fileName"])
         except Exception as exc:

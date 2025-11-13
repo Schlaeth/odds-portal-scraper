@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import random
+from pathlib import Path
 from typing import AsyncGenerator, Dict, Iterable
 
 from playwright.async_api import Page
@@ -40,6 +41,7 @@ async def collect_match_data(
     throttle=None,
     match_retry: Dict | None = None,
     activate_all_bookies: bool = True,
+    skip_existing_dir: Path | None = None,
 ) -> AsyncGenerator[Dict, None]:
     await set_odds_format(page, odds_format)
     links = await collect_match_links(page, limit)
@@ -57,8 +59,11 @@ async def collect_match_data(
                 {
                     "retry": match_retry,
                     "all_bookies": activate_all_bookies,
+                    "skip_existing_dir": skip_existing_dir,
                 },
             )
+            if result is None:
+                continue
             yield result
         except Exception as exc:
             logger.error("Error scraping %s: %s", link, exc)
