@@ -35,8 +35,15 @@ async def extract_over_under_odds(page: Page, total: str, activate_all: bool = T
 
     logger.info("scrapping odd for under/over %s market", total)
 
-    await _prepare_market(page, total, wanted, activate_all)
-    await _ensure_odds_loaded(page, total, wanted, activate_all)
+    try:
+        await _prepare_market(page, total, wanted, activate_all)
+        await _ensure_odds_loaded(page, total, wanted, activate_all)
+    except PlaywrightTimeoutError:
+        logger.warning("Skipping %s market because the widget never became visible.", wanted)
+        return []
+    except RuntimeError as exc:
+        logger.warning("Skipping %s market due to error: %s", wanted, exc)
+        return []
 
     rows = await page.query_selector_all(ROW_SELECTOR)
     results: List[Dict[str, str]] = []

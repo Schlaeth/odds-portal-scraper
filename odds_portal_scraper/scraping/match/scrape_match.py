@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Dict, Optional
 
 from playwright.async_api import Page
@@ -42,7 +43,7 @@ async def scrape_match(
     link: str,
     league_name: str,
     options: Optional[Dict] = None,
-) -> Dict[str, object]:
+) -> Optional[Dict[str, object]]:
     """Navigate to the given relative link and return scraped data plus filename."""
 
     opts = options or {}
@@ -53,12 +54,21 @@ async def scrape_match(
     humanizer = create_humanizer(page, humanize_config)
     run_action = create_action_runner(page, action_delay_ms, action_retry, humanizer)
     activate_all_bookies = bool(opts.get("all_bookies", True))
+    skip_existing_dir = opts.get("skip_existing_dir")
+    skip_existing_path = Path(skip_existing_dir) if skip_existing_dir else None
 
     url = f"{BASE_URL}{link}"
 
     try:
         await goto_with_retry(page, url, retry=retry)
         metadata = await run_action("match metadata", lambda: extract_match_metadata(page))
+        file_name = f"{metadata['date']}-{metadata['homeTeam']}-{metadata['awayTeam']}.json"
+        if skip_existing_path:
+            destination = skip_existing_path / file_name
+            if destination.exists():
+                logger.info("Skipping existing file %s before odds collection", destination)
+                return None
+
         ml_full = await run_action(
             "moneyline odds (full time)",
             lambda: extract_moneyline_odds(page, "fullTime", activate_all_bookies),
@@ -93,7 +103,6 @@ async def scrape_match(
             "underOver15": ou_15,
             "underOver35": ou_35,
         }
-        file_name = f"{metadata['date']}-{metadata['homeTeam']}-{metadata['awayTeam']}.json"
         return {"data": data, "fileName": file_name}
     except Exception as exc:
         logger.error("extracting data for %s: %s", url, exc)
