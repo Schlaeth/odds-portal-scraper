@@ -91,7 +91,7 @@ odds-portal odds-format
 
 ## Data output
 
-Each match produces a JSON file named `<date>-<home>-<away>.json` containing metadata, three-way moneyline odds (full/first/second half) and over/under 1.5/2.5/3.5 markets. Example fields:
+Each match produces a JSON file named `<date>--<home>-<away>.json` (with `date` in `YYYY-MM-DD` format) containing metadata, three-way moneyline odds (full/first/second half) and over/under 1.5/2.5/3.5 markets. Example fields:
 
 ```json
 {

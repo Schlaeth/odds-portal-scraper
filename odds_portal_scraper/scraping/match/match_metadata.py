@@ -20,10 +20,13 @@ async def extract_match_metadata(page: Page) -> dict:
     fallback_date = datetime.now()
     day, date, time = await _read_date_time(page, fallback_date)
     home, away = await _read_participants(page)
+    day_clean = _clean_token(day)
+    time_clean = _clean_token(time)
+    normalised_date = _normalise_date(date)
     return {
-        "day": day,
-        "date": date,
-        "time": time,
+        "day": day_clean,
+        "date": normalised_date,
+        "time": time_clean,
         "homeTeam": home,
         "awayTeam": away,
     }
@@ -96,6 +99,24 @@ def _parse_participants_from_url(url: str) -> Tuple[str, str] | None:
 def _format_team(name: str) -> str:
     clean = name.lower()
     return clean.capitalize()
+
+
+def _clean_token(value: str) -> str:
+    return value.strip().rstrip(",")
+
+
+def _normalise_date(value: str) -> str:
+    clean = _clean_token(value)
+    if not clean:
+        return clean
+    known_formats = ("%d %b %Y", "%d %B %Y", "%Y-%m-%d")
+    for fmt in known_formats:
+        try:
+            parsed = datetime.strptime(clean, fmt)
+            return parsed.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    return clean
 
 
 __all__ = ["extract_match_metadata"]

@@ -62,7 +62,8 @@ async def scrape_match(
     try:
         await goto_with_retry(page, url, retry=retry)
         metadata = await run_action("match metadata", lambda: extract_match_metadata(page))
-        file_name = f"{metadata['date']}-{metadata['homeTeam']}-{metadata['awayTeam']}.json"
+        iso_date = metadata.get("date") or "unknown-date"
+        file_name = f"{iso_date}--{metadata['homeTeam']}-{metadata['awayTeam']}.json"
         if skip_existing_path:
             destination = skip_existing_path / file_name
             if destination.exists():
