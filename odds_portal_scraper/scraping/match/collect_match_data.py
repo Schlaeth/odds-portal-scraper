@@ -66,7 +66,7 @@ async def collect_match_data(
                 continue
             yield result
         except Exception as exc:
-            logger.error("Error scraping %s: %s", link, exc)
+            logger.exception("Error scraping %s, skipping match. Reason: %s", link, exc)
 
 
 __all__ = ["collect_match_data"]
