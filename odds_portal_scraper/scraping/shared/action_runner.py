@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+from pathlib import Path
 from typing import Awaitable, Callable, Dict
 
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
@@ -32,6 +34,18 @@ def create_action_runner(
             await wait_delay(action_delay_ms)
         first_action = False
 
+        async def _capture_screenshot(label: str) -> None:
+            try:
+                screenshots_dir = Path("screenshots")
+                screenshots_dir.mkdir(exist_ok=True)
+                timestamp = datetime.utcnow().strftime("%Y%m%dT%H%M%SZ")
+                safe_label = label.replace(" ", "_").lower()
+                path = screenshots_dir / f"{timestamp}--{safe_label}.png"
+                await page.screenshot(path=str(path), full_page=True)
+                logger.warning("Saved timeout screenshot to %s", path)
+            except Exception as screenshot_exc:  # pragma: no cover - best effort
+                logger.warning("Failed to capture screenshot for %s: %s", label, screenshot_exc)
+
         last_error: Exception | None = None
         for attempt in range(1, max_attempts + 1):
             try:
@@ -40,6 +54,7 @@ def create_action_runner(
             except PlaywrightTimeoutError as exc:
                 last_error = exc
                 if attempt == max_attempts:
+                    await _capture_screenshot(description)
                     break
                 logger.warning(
                     "[%s] locator timed out (attempt %s/%s). Retrying in %sms.",
