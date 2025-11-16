@@ -20,6 +20,7 @@ LEAGUE_DEFINITIONS = (
     ("eredivisie", 1, "football/netherlands/eredivisie", False),
     ("belgian", 1, "football/belgium/jupiler-pro-league", False),
     ("argentina", 1, "football/argentina/liga-profesional", False),
+    ("super-lig", 1, "football/turkey/super-lig", False),
     ("champions-league", 1, "football/europe/champions-league", False),
     ("europa-league", 1, "football/europe/europa-league", False),
     ("allsvenskan", 1, "football/sweden/allsvenskan", True),

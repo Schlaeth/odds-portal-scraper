@@ -25,6 +25,13 @@ def test_get_historic_urls_fixed_structure():
     ]
 
 
+def test_get_historic_urls_super_lig():
+    urls = get_historic_urls("super-lig-1", 2023, 2024)
+    assert urls == [
+        "https://www.oddsportal.com/football/turkey/super-lig-2023-2024/results/",
+    ]
+
+
 def test_get_historic_urls_split_year_invalid_range():
     with pytest.raises(ValueError):
         get_historic_urls("premier-league-1", 2020, 2020)
