@@ -4,6 +4,8 @@ BASE_URL = "https://www.oddsportal.com"
 
 LEAGUE_DEFINITIONS = (
     ("premier-league", 1, "soccer/england/premier-league", False),
+    ("league-one", 3, "football/england/league-one", False),
+    ("league-two", 4, "football/england/league-two", False),
     ("ligue", 1, "soccer/france/ligue-1", False),
     ("ligue", 2, "football/france/ligue-2", False),
     ("bundesliga", 1, "soccer/germany/bundesliga", False),
