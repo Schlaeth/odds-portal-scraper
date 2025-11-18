@@ -12,14 +12,17 @@ from ...logger import logger
 
 async def discover_season_pages(page: Page, season_url: str) -> List[str]:
     await page.goto(season_url, wait_until="domcontentloaded")
+    await page.wait_for_load_state("networkidle")
     # Allow client-side router to render pagination controls.
-    await page.wait_for_timeout(1_000)
+    await page.wait_for_timeout(2_000)
     base_url = page.url.split('#')[0]
 
     selectors = [
         "a[href*='#/page/']",
         "a[href*='?page=']",
         "a.pagination-link",
+        "div.pagination a",
+        "nav.pagination a",
     ]
     page_numbers: List[str] = []
     debug_samples: list[str] = []
