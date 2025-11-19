@@ -51,6 +51,12 @@ def export_basketball_season(league: str, season_year: int, output_path: Path) -
             default_name = f"table_{idx + 1}"
             table_id = table_ids[idx] if idx < len(table_ids) else default_name
             sheet_name = (table_id or default_name)[:31]  # Excel sheet name limit
+
+            if isinstance(df.columns, pd.MultiIndex):
+                # Flatten MultiIndex columns so Excel export works with index=False.
+                df = df.copy()
+                df.columns = [" ".join([str(part) for part in col if part]).strip() for col in df.columns]
+
             df.to_excel(writer, sheet_name=sheet_name, index=False)
             logger.info("Wrote sheet %s with %s rows", sheet_name, len(df))
 
