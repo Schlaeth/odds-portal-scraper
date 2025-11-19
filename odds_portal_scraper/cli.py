@@ -10,6 +10,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from .basketball import export_basketball_season
 from .commands import historic_odds, next_matches
 from .constants import LEAGUES_URLS_MAP, ODDS_FORMAT_MAP
 from .exporters import CallbackType, export_to_dir, export_to_s3
@@ -138,6 +139,16 @@ def odds_format_cmd():
     for key, description in ODDS_FORMAT_MAP.items():
         table.add_row(key, description)
     console.print(table)
+
+
+@app.command(name="basketball-season")
+def basketball_season(
+    season_year: int = typer.Argument(..., help="Season end year (e.g., 2024 for 2023-24)"),
+    output: Path = typer.Option(..., "--output", "-o", help="Output Excel file path"),
+    league: str = typer.Option("NBA", "--league", "-l", help="Basketball Reference league prefix, e.g. NBA"),
+):
+    """Download Basketball Reference season tables and export to XLSX."""
+    export_basketball_season(league, season_year, output)
 
 
 __all__ = ["app"]
