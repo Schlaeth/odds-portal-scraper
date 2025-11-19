@@ -51,6 +51,12 @@ def historic(
     start_year: int = typer.Argument(..., help="Season start year"),
     end_year: int = typer.Argument(..., help="Season end year"),
     odds_format: str = typer.Option(..., "--odds-format", "-o", help="Desired odds format"),
+    start_page: int = typer.Option(
+        1,
+        "--start-page",
+        "-s",
+        help="Start scraping at this page number (skips earlier paginated pages)",
+    ),
     s3: Optional[str] = typer.Option(None, help="S3 bucket to upload JSON files"),
     local: Optional[Path] = typer.Option(None, help="Local directory to save JSON files"),
     all_bookies: bool = typer.Option(
@@ -66,6 +72,8 @@ def historic(
 ):
     if start_year > end_year:
         raise typer.BadParameter("start_year must be less than or equal to end_year")
+    if start_page < 1:
+        raise typer.BadParameter("start_page must be greater than or equal to 1")
     exporter, skip_dir = _resolve_exporter(s3, local, skip_existing=skip_existing)
     _run_async(
         historic_odds(
@@ -74,6 +82,7 @@ def historic(
             end_year,
             odds_format,
             exporter,
+            start_page=start_page,
             activate_all_bookies=all_bookies,
             skip_existing_dir=skip_dir,
         )

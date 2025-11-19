@@ -19,6 +19,7 @@ async def historic_scraper(
     odds_format: str,
     on_result: Callable[[dict, str], Awaitable[None]],
     *,
+    start_page: int = 1,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
 ) -> None:
@@ -30,7 +31,7 @@ async def historic_scraper(
             page = await browser.new_page()
             await page.set_viewport_size({"width": 1_800, "height": 2_500})
 
-            page_urls = await discover_season_pages(page, season_url)
+            page_urls = await discover_season_pages(page, season_url, start_page=start_page)
             for page_url in page_urls:
                 logger.info("Starting scrape for: %s", page_url)
                 await page.goto(page_url, wait_until="domcontentloaded")

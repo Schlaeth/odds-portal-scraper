@@ -67,6 +67,31 @@ def test_cli_requires_output(monkeypatch):
     assert "One of --s3 or --local" in result.output
 
 
+def test_cli_requires_valid_start_page(monkeypatch):
+    async def noop(*_args, **_kwargs):
+        return None
+
+    monkeypatch.setattr("odds_portal_scraper.cli.historic_odds", noop)
+
+    result = runner.invoke(
+        app,
+        [
+            "historic",
+            "premier-league-1",
+            "2020",
+            "2021",
+            "--odds-format",
+            "eu",
+            "--start-page",
+            "0",
+            "--local",
+            "out",
+        ],
+    )
+    assert result.exit_code != 0
+    assert "start_page" in result.output
+
+
 def test_soccer_leagues_lists_known_entries():
     result = runner.invoke(app, ["soccer-leagues"])
     assert result.exit_code == 0

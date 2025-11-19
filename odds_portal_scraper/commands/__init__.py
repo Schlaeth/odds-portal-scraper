@@ -26,6 +26,7 @@ async def historic_odds(
     odds_format: str,
     on_result: Callback,
     *,
+    start_page: int = 1,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
 ) -> None:
@@ -37,6 +38,7 @@ async def historic_odds(
             end_year,
             odds_format,
             on_result,
+            start_page=start_page,
             activate_all_bookies=activate_all_bookies,
             skip_existing_dir=skip_existing_dir,
         )

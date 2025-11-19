@@ -54,6 +54,7 @@ Both scraping commands require one export target: `--local <dir>` or `--s3 <buck
 When exporting locally the scraper now skips already existing JSON files by default; pass `--no-skip-existing` to overwrite.
 League keys follow the pattern `<slug>-<division>` (for example `premier-league-1`, `bundesliga-2`).
 Use `--no-all-bookies` if you want to skip clicking the “All” bookies filter (scraping is faster but returns only the default subset shown by OddsPortal).
+Use `--start-page <number>` with the `historic` command to resume scraping from a specific paginated results page.
 
 ### Historic example
 
