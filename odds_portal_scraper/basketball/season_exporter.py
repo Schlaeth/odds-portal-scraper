@@ -58,4 +58,20 @@ def export_basketball_season(league: str, season_year: int, output_path: Path) -
     return output_path
 
 
-__all__ = ["export_basketball_season"]
+def export_basketball_season_range(league: str, start_year: int, end_year: int, output_dir: Path) -> list[Path]:
+    """Download a range of seasons (inclusive) and save one workbook per season."""
+    if start_year > end_year:
+        raise ValueError("start_year must be less than or equal to end_year")
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    written: list[Path] = []
+    for year in range(start_year, end_year + 1):
+        target = output_dir / f"{league.lower()}-{year}.xlsx"
+        export_basketball_season(league, year, target)
+        written.append(target)
+    return written
+
+
+__all__ = ["export_basketball_season", "export_basketball_season_range"]

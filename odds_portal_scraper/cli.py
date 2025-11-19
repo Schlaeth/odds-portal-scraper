@@ -10,7 +10,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .basketball import export_basketball_season
+from .basketball import export_basketball_season, export_basketball_season_range
 from .commands import historic_odds, next_matches
 from .constants import LEAGUES_URLS_MAP, ODDS_FORMAT_MAP
 from .exporters import CallbackType, export_to_dir, export_to_s3
@@ -143,11 +143,33 @@ def odds_format_cmd():
 
 @app.command(name="basketball-season")
 def basketball_season(
-    season_year: int = typer.Argument(..., help="Season end year (e.g., 2024 for 2023-24)"),
-    output: Path = typer.Option(..., "--output", "-o", help="Output Excel file path"),
+    season_year: Optional[int] = typer.Argument(
+        None, help="Season end year (e.g., 2024 for 2023-24). Optional when using --start-year/--end-year."
+    ),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="Output Excel file path for single season"),
     league: str = typer.Option("NBA", "--league", "-l", help="Basketball Reference league prefix, e.g. NBA"),
+    start_year: Optional[int] = typer.Option(None, "--start-year", "-s", help="Range start season year"),
+    end_year: Optional[int] = typer.Option(None, "--end-year", "-e", help="Range end season year"),
+    output_dir: Optional[Path] = typer.Option(None, "--output-dir", "-d", help="Directory for multi-season export"),
 ):
     """Download Basketball Reference season tables and export to XLSX."""
+    range_mode = start_year is not None or end_year is not None
+
+    if range_mode:
+        if season_year is not None or output is not None:
+            raise typer.BadParameter("Use either single-season (year + --output) or range mode (--start-year/--end-year + --output-dir)")
+        if start_year is None or end_year is None:
+            raise typer.BadParameter("Both --start-year and --end-year are required for range export")
+        if start_year > end_year:
+            raise typer.BadParameter("start_year must be less than or equal to end_year")
+        if output_dir is None:
+            raise typer.BadParameter("--output-dir is required for range export")
+        export_basketball_season_range(league, start_year, end_year, output_dir)
+        return
+
+    if season_year is None or output is None:
+        raise typer.BadParameter("Provide a season year and --output for single-season export, or use range mode options")
+
     export_basketball_season(league, season_year, output)
 
 
