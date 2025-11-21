@@ -85,9 +85,14 @@ def _export_schedule_csv(league: str, season_year: int, target: Path) -> Path:
     if not tables:
         raise ValueError(f"No schedule table found for {url}")
 
+    schedule = tables[0].copy()
+    if "Date" in schedule.columns:
+        # Format as ISO strings to avoid Excel rendering ##### in some locales/column widths.
+        schedule["Date"] = pd.to_datetime(schedule["Date"], errors="coerce").dt.strftime("%Y-%m-%d")
+
     target = Path(target)
     target.parent.mkdir(parents=True, exist_ok=True)
-    tables[0].to_csv(target, index=False)
+    schedule.to_csv(target, index=False)
     logger.info("Exported schedule CSV to %s", target)
     return target
 
@@ -118,7 +123,11 @@ def _export_schedule_workbook(league: str, season_year: int, target: Path) -> Pa
             if pd.isna(month_name):
                 continue
             sheet_name = str(month_name)[:31]
-            frame.to_excel(writer, sheet_name=sheet_name, index=False)
+            frame_to_write = frame.copy()
+            if "Date" in frame_to_write.columns and pd.api.types.is_datetime64_any_dtype(frame_to_write["Date"]):
+                # Format as strings to avoid ##### display issues in Excel.
+                frame_to_write["Date"] = frame_to_write["Date"].dt.strftime("%Y-%m-%d")
+            frame_to_write.to_excel(writer, sheet_name=sheet_name, index=False)
             logger.info("Wrote %s schedule sheet to %s", sheet_name, target)
 
     logger.info("Exported schedule workbook to %s", target)
