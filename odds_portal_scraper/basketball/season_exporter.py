@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+from io import StringIO
 from pathlib import Path
 from typing import List, Literal, Optional
 
@@ -75,17 +76,69 @@ def _extract_table_ids(html: str) -> List[str]:
     return ordered
 
 
+def _read_schedule_table(html: str) -> pd.DataFrame:
+    tables = pd.read_html(StringIO(html), attrs={"id": "schedule"}, flavor=["lxml"])
+    if not tables:
+        raise ValueError("No schedule table found")
+    return tables[0]
+
+
+def _collect_schedule_frames(league: str, season_year: int) -> pd.DataFrame:
+    """Download all monthly schedule pages and return the concatenated table."""
+    base_url = f"https://www.basketball-reference.com/leagues/{league}_{season_year}_games.html"
+    logger.info("Downloading Basketball Reference schedule page: %s", base_url)
+
+    base_html = _fetch_html(base_url)
+
+    month_pattern = rf"/leagues/{re.escape(league)}_{season_year}_games-([a-z]+)\\.html"
+    month_slugs: list[str] = re.findall(month_pattern, base_html, flags=re.IGNORECASE)
+
+    def build_url(slug: str) -> str:
+        return f"https://www.basketball-reference.com/leagues/{league}_{season_year}_games-{slug.lower()}.html"
+
+    seen: set[str] = set()
+    month_urls = [build_url(slug) for slug in month_slugs + DEFAULT_MONTH_SLUGS]
+    month_urls = [u for u in month_urls if not (u in seen or seen.add(u))]
+
+    frames: list[pd.DataFrame] = []
+    base_frame: Optional[pd.DataFrame] = None
+
+    try:
+        base_frame = _read_schedule_table(base_html).copy()
+    except ValueError:
+        base_frame = None
+
+    for url in month_urls:
+        try:
+            logger.info("Fetching schedule: %s", url)
+            html = _fetch_html(url)
+        except HTTPError as exc:
+            status = exc.response.status_code if exc.response is not None else None
+            if status == 404:
+                logger.info("Skipping missing month page %s (404)", url)
+                continue
+            raise
+
+        try:
+            table = _read_schedule_table(html)
+        except ValueError:
+            logger.warning("No schedule table found for %s", url)
+            continue
+        frames.append(table.copy())
+
+    if frames:
+        schedule = pd.concat(frames, ignore_index=True).drop_duplicates()
+        return schedule
+
+    if base_frame is not None:
+        return base_frame
+
+    raise ValueError(f"No schedule table found for {base_url}")
+
+
 def _export_schedule_csv(league: str, season_year: int, target: Path) -> Path:
     """Download season schedule/results page and export the schedule table as CSV."""
-    url = f"https://www.basketball-reference.com/leagues/{league}_{season_year}_games.html"
-    logger.info("Downloading Basketball Reference schedule: %s", url)
-
-    html = _fetch_html(url)
-    tables = pd.read_html(html, attrs={"id": "schedule"})
-    if not tables:
-        raise ValueError(f"No schedule table found for {url}")
-
-    schedule = tables[0].copy()
+    schedule = _collect_schedule_frames(league, season_year)
     if "Date" in schedule.columns:
         # Format as ISO strings to avoid Excel rendering ##### in some locales/column widths.
         schedule["Date"] = pd.to_datetime(schedule["Date"], errors="coerce").dt.strftime("%Y-%m-%d")
@@ -98,16 +151,8 @@ def _export_schedule_csv(league: str, season_year: int, target: Path) -> Path:
 
 
 def _export_schedule_workbook(league: str, season_year: int, target: Path) -> Path:
-    """Download schedule main page and split into monthly sheets."""
-    url = f"https://www.basketball-reference.com/leagues/{league}_{season_year}_games.html"
-    logger.info("Downloading Basketball Reference schedule (xlsx): %s", url)
-
-    html = _fetch_html(url)
-    tables = pd.read_html(html, attrs={"id": "schedule"})
-    if not tables:
-        raise ValueError(f"No schedule table found for {url}")
-
-    schedule = tables[0].copy()
+    """Download schedule main page (all months) and split into monthly sheets."""
+    schedule = _collect_schedule_frames(league, season_year)
     if "Date" not in schedule.columns:
         raise ValueError("Schedule table missing Date column")
     schedule["Date"] = pd.to_datetime(schedule["Date"], errors="coerce")
@@ -148,7 +193,7 @@ def export_basketball_season(
     logger.info("Downloading Basketball Reference season page: %s", url)
 
     html = _fetch_html(url)
-    tables = pd.read_html(html)
+    tables = pd.read_html(StringIO(html), flavor=["lxml"])
 
     if not tables:
         raise ValueError(f"No tables found for {url}")
@@ -240,3 +285,4 @@ __all__ = [
     "export_basketball_season_range",
     "export_basketball_schedule",
 ]
+DEFAULT_MONTH_SLUGS = ["october", "november", "december", "january", "february", "march", "april", "may", "june"]
