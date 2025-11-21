@@ -280,9 +280,33 @@ def export_basketball_schedule(
     return _export_schedule_workbook(league, season_year, output_path)
 
 
+def export_basketball_schedule_range(
+    league: str,
+    start_year: int,
+    end_year: int,
+    output_dir: Path,
+    *,
+    schedule_format: Literal["csv", "xlsx"] = "csv",
+) -> list[Path]:
+    """Export schedules for a range of seasons."""
+    if start_year > end_year:
+        raise ValueError("start_year must be less than or equal to end_year")
+
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    written: list[Path] = []
+    for year in range(start_year, end_year + 1):
+        target = output_dir / f"{league.lower()}-{year}-games.{schedule_format}"
+        export_basketball_schedule(league, year, target, schedule_format=schedule_format)
+        written.append(target)
+    return written
+
+
 __all__ = [
     "export_basketball_season",
     "export_basketball_season_range",
     "export_basketball_schedule",
+    "export_basketball_schedule_range",
 ]
 DEFAULT_MONTH_SLUGS = ["october", "november", "december", "january", "february", "march", "april", "may", "june"]

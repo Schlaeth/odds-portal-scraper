@@ -10,7 +10,12 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from .basketball import export_basketball_schedule, export_basketball_season, export_basketball_season_range
+from .basketball import (
+    export_basketball_schedule,
+    export_basketball_schedule_range,
+    export_basketball_season,
+    export_basketball_season_range,
+)
 from .commands import historic_odds, next_matches
 from .constants import LEAGUES_URLS_MAP, ODDS_FORMAT_MAP
 from .exporters import CallbackType, export_to_dir, export_to_s3
@@ -222,6 +227,27 @@ def basketball_schedule(
 ):
     """Export only the schedule/results table for a season."""
     export_basketball_schedule(league, season_year, output, schedule_format=schedule_format)
+
+
+@app.command(name="basketball-schedule-range")
+def basketball_schedule_range(
+    start_year: int = typer.Argument(..., help="Range start season year"),
+    end_year: int = typer.Argument(..., help="Range end season year"),
+    *,
+    output_dir: Path = typer.Option(..., "--output-dir", "-d", help="Directory for schedule exports"),
+    league: str = typer.Option("NBA", "--league", "-l", help="Basketball Reference league prefix, e.g. NBA"),
+    schedule_format: Literal["csv", "xlsx"] = typer.Option(
+        "csv",
+        "--schedule-format",
+        "-f",
+        case_sensitive=False,
+        help="Schedule export format: csv or xlsx",
+    ),
+):
+    """Export schedules for a range of seasons (month-split when xlsx)."""
+    export_basketball_schedule_range(
+        league, start_year, end_year, output_dir, schedule_format=schedule_format
+    )
 
 
 __all__ = ["app"]
