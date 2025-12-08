@@ -49,6 +49,7 @@ odds-portal [COMMAND] [OPTIONS]
 | `next-matches`   | Scrape upcoming matches                       |
 | `soccer-leagues` | Print the supported league keys and URLs      |
 | `odds-format`    | Print the supported odds format keys/descriptions |
+| `basketball-season` | Export Basketball Reference season tables to XLSX (single season or range) |
 
 Both scraping commands require one export target: `--local <dir>` or `--s3 <bucket>`.
 When exporting locally the scraper now skips already existing JSON files by default; pass `--no-skip-existing` to overwrite.
@@ -80,6 +81,22 @@ odds-portal next-matches bundesliga-1 \
 odds-portal soccer-leagues
 odds-portal odds-format
 ```
+
+### Basketball Reference season export
+
+```bash
+odds-portal basketball-season 2024 --league NBA --output ./nba-2024.xlsx
+```
+
+Exports all tables from the season page (new sheets per table).
+
+#### Export mehrerer Basketball-Saisons
+
+```bash
+odds-portal basketball-season --league NBA --start-year 2000 --end-year 2024 --output-dir ./nba-seasons
+```
+
+Schreibt pro Saison eine XLSX mit Namen `nba-<year>.xlsx` in das Zielverzeichnis.
 
 ## Configuration
 
