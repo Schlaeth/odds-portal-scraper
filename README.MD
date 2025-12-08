@@ -9,6 +9,7 @@ Python rewrite of the Odds Portal CLI: scrape historical or upcoming soccer odds
 - Export JSON payloads directly to disk or upload them to S3.
 - Randomised Playwright fingerprints + retries that mimic the original Node.js behaviour.
 - Rich-powered tables for listing leagues / formats and structured logging.
+- NBA season pages are supported via the `nba-1` league key (over/under totals are auto-discovered).
 
 ## Requirements
 
@@ -120,7 +121,11 @@ Each match produces a JSON file named `<date>--<home>-<away>.json` (with `date` 
   "homeTeam": "Arsenal",
   "awayTeam": "Chelsea",
   "mlFullTime": [ { "bookMakerName": "Bet365", "hw": "1.92", "d": "3.40", "aw": "4.00" } ],
-  "underOver25": [ { "bookmakerName": "Bet365", "oddsOver": "1.91", "oddsUnder": "1.99" } ]
+  "underOver25": [ { "bookmakerName": "Bet365", "oddsOver": "1.91", "oddsUnder": "1.99" } ],
+  "overUnderMarkets": [
+    { "total": "2.5", "bookmakerName": "Bet365", "oddsOver": "1.91", "oddsUnder": "1.99" },
+    { "total": "215.5", "bookmakerName": "Bet365", "oddsOver": "1.85", "oddsUnder": "1.95" }
+  ]
 }
 ```
 
