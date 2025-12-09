@@ -65,6 +65,7 @@ async def scrape_match(
     league_default_totals = LEAGUE_DEFAULT_OVER_UNDER_TOTALS.get(league_name, DEFAULT_OVER_UNDER_TOTALS)
     over_under_totals = opts.get("over_under_totals", league_default_totals)
     discover_totals = bool(opts.get("discover_over_under_totals")) or league_name in AUTO_DISCOVER_OVER_UNDER_LEAGUES
+    over_under_range = opts.get("over_under_range")
     skip_existing_path = Path(skip_existing_dir) if skip_existing_dir else None
 
     url = f"{BASE_URL}{link}"
@@ -97,6 +98,24 @@ async def scrape_match(
             discovered_totals = await run_action("discover over/under totals", lambda: discover_over_under_totals(page))
             if discovered_totals:
                 totals_to_use = [str(total) for total in discovered_totals]
+        if over_under_range and totals_to_use:
+            totals_before = len(totals_to_use)
+            totals_to_use = [
+                total for total in totals_to_use if _total_in_range(total, over_under_range[0], over_under_range[1])
+            ]
+            if not totals_to_use:
+                logger.info(
+                    "Skipping over/under scraping; no totals in requested range %.1f-%.1f",
+                    over_under_range[0],
+                    over_under_range[1],
+                )
+            elif totals_before != len(totals_to_use):
+                logger.info(
+                    "Filtered over/under totals to range %.1f-%.1f: %s",
+                    over_under_range[0],
+                    over_under_range[1],
+                    totals_to_use,
+                )
         over_under_markets = {}
         if totals_to_use:
             for total in totals_to_use:
@@ -127,5 +146,13 @@ async def scrape_match(
     except Exception as exc:
         logger.error("extracting data for %s: %s", url, exc)
         raise
+
+def _total_in_range(value: str, lower: float, upper: float) -> bool:
+    try:
+        numeric = float(value)
+    except ValueError:
+        return False
+    return lower <= numeric <= upper
+
 
 __all__ = ["scrape_match"]

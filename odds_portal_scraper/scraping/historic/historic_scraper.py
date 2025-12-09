@@ -22,6 +22,7 @@ async def historic_scraper(
     start_page: int = 1,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
+    over_under_range: tuple[float, float] | None = None,
 ) -> None:
     season_urls = get_historic_urls(league_name, start_year, end_year)
 
@@ -41,6 +42,7 @@ async def historic_scraper(
                     odds_format=odds_format,
                     activate_all_bookies=activate_all_bookies,
                     skip_existing_dir=skip_existing_dir,
+                    over_under_range=over_under_range,
                 ):
                     await on_result(result["data"], result["fileName"])
         except Exception as exc:

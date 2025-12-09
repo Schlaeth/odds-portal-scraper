@@ -10,6 +10,7 @@ Python rewrite of the Odds Portal CLI: scrape historical or upcoming soccer odds
 - Randomised Playwright fingerprints + retries that mimic the original Node.js behaviour.
 - Rich-powered tables for listing leagues / formats and structured logging.
 - NBA season pages are supported via the `nba-1` league key (over/under totals rely on discovery; soccer defaults like 1.5/2.5/3.5 are skipped).
+- Optional over/under range filter (e.g., only totals between 228.5 and 232.5).
 
 ## Requirements
 
@@ -57,6 +58,7 @@ When exporting locally the scraper now skips already existing JSON files by defa
 League keys follow the pattern `<slug>-<division>` (for example `premier-league-1`, `bundesliga-2`).
 Use `--no-all-bookies` if you want to skip clicking the “All” bookies filter (scraping is faster but returns only the default subset shown by OddsPortal).
 Use `--start-page <number>` with the `historic` command to resume scraping from a specific paginated results page.
+Use `--over-under-range MIN-MAX` to filter discovered totals (e.g., `--over-under-range 228.5-232.5`).
 
 ### Historic example
 

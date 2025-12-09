@@ -25,6 +25,23 @@ app = typer.Typer(help="Scrape soccer odds from oddsportal.com")
 console = Console()
 
 
+def _parse_over_under_range(value: Optional[str]) -> Optional[Tuple[float, float]]:
+    """Parse range strings like '228.5-232.5' into (min, max)."""
+    if not value:
+        return None
+    if "-" not in value:
+        raise typer.BadParameter("Use format MIN-MAX, e.g. 228.5-232.5")
+    start_str, end_str = value.split("-", 1)
+    try:
+        start = float(start_str)
+        end = float(end_str)
+    except ValueError as exc:
+        raise typer.BadParameter("Range bounds must be numbers, e.g. 228.5-232.5") from exc
+    if start > end:
+        raise typer.BadParameter("Range start must be <= range end")
+    return (start, end)
+
+
 def _resolve_exporter(
     s3_bucket: Optional[str],
     local_dir: Optional[Path],
@@ -75,12 +92,18 @@ def historic(
         "--skip-existing/--no-skip-existing",
         help="When exporting locally, skip matches whose JSON file already exists",
     ),
+    over_under_range: Optional[str] = typer.Option(
+        None,
+        "--over-under-range",
+        help="Only scrape over/under totals within MIN-MAX (e.g. 228.5-232.5)",
+    ),
 ):
     if start_year > end_year:
         raise typer.BadParameter("start_year must be less than or equal to end_year")
     if start_page < 1:
         raise typer.BadParameter("start_page must be greater than or equal to 1")
     exporter, skip_dir = _resolve_exporter(s3, local, skip_existing=skip_existing)
+    parsed_range = _parse_over_under_range(over_under_range)
     _run_async(
         historic_odds(
             league_name,
@@ -91,6 +114,7 @@ def historic(
             start_page=start_page,
             activate_all_bookies=all_bookies,
             skip_existing_dir=skip_dir,
+            over_under_range=parsed_range,
         )
     )
 
@@ -112,8 +136,14 @@ def next_matches_cmd(
         "--skip-existing/--no-skip-existing",
         help="When exporting locally, skip matches whose JSON file already exists",
     ),
+    over_under_range: Optional[str] = typer.Option(
+        None,
+        "--over-under-range",
+        help="Only scrape over/under totals within MIN-MAX (e.g. 228.5-232.5)",
+    ),
 ):
     exporter, skip_dir = _resolve_exporter(s3, local, skip_existing=skip_existing)
+    parsed_range = _parse_over_under_range(over_under_range)
     _run_async(
         next_matches(
             league_name,
@@ -122,6 +152,7 @@ def next_matches_cmd(
             limit,
             activate_all_bookies=all_bookies,
             skip_existing_dir=skip_dir,
+            over_under_range=parsed_range,
         )
     )
 

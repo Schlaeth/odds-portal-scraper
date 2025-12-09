@@ -42,6 +42,7 @@ async def collect_match_data(
     match_retry: Dict | None = None,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
+    over_under_range: tuple[float, float] | None = None,
 ) -> AsyncGenerator[Dict, None]:
     await set_odds_format(page, odds_format)
     links = await collect_match_links(page, limit)
@@ -60,6 +61,7 @@ async def collect_match_data(
                     "retry": match_retry,
                     "all_bookies": activate_all_bookies,
                     "skip_existing_dir": skip_existing_dir,
+                    "over_under_range": over_under_range,
                 },
             )
             if result is None:

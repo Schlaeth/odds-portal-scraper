@@ -29,6 +29,7 @@ async def historic_odds(
     start_page: int = 1,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
+    over_under_range: tuple[float, float] | None = None,
 ) -> None:
     async def _command(browser):
         await historic_scraper(
@@ -41,6 +42,7 @@ async def historic_odds(
             start_page=start_page,
             activate_all_bookies=activate_all_bookies,
             skip_existing_dir=skip_existing_dir,
+            over_under_range=over_under_range,
         )
 
     await _run_with_browser(_command)
@@ -54,6 +56,7 @@ async def next_matches(
     *,
     activate_all_bookies: bool = True,
     skip_existing_dir: Path | None = None,
+    over_under_range: tuple[float, float] | None = None,
 ) -> None:
     async def _command(browser):
         await next_matches_scraper(
@@ -64,6 +67,7 @@ async def next_matches(
             limit,
             activate_all_bookies=activate_all_bookies,
             skip_existing_dir=skip_existing_dir,
+            over_under_range=over_under_range,
         )
 
     await _run_with_browser(_command)
