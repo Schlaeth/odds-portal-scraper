@@ -31,6 +31,10 @@ ACTION_RETRY_DEFAULT = {
 
 DEFAULT_OVER_UNDER_TOTALS = ("2.5", "1.5", "3.5")
 AUTO_DISCOVER_OVER_UNDER_LEAGUES = {"nba-1"}
+LEAGUE_DEFAULT_OVER_UNDER_TOTALS = {
+    # Basketball totals are high-scoring; avoid soccer defaults like 1.5/2.5/3.5.
+    "nba-1": (),
+}
 
 
 def _merge_retry(defaults: Dict, overrides: Optional[Dict]) -> Dict:
@@ -58,7 +62,8 @@ async def scrape_match(
     run_action = create_action_runner(page, action_delay_ms, action_retry, humanizer)
     activate_all_bookies = bool(opts.get("all_bookies", True))
     skip_existing_dir = opts.get("skip_existing_dir")
-    over_under_totals = opts.get("over_under_totals", DEFAULT_OVER_UNDER_TOTALS)
+    league_default_totals = LEAGUE_DEFAULT_OVER_UNDER_TOTALS.get(league_name, DEFAULT_OVER_UNDER_TOTALS)
+    over_under_totals = opts.get("over_under_totals", league_default_totals)
     discover_totals = bool(opts.get("discover_over_under_totals")) or league_name in AUTO_DISCOVER_OVER_UNDER_LEAGUES
     skip_existing_path = Path(skip_existing_dir) if skip_existing_dir else None
 
@@ -87,19 +92,21 @@ async def scrape_match(
             "moneyline odds (second half)",
             lambda: extract_moneyline_odds(page, "secondHalf", activate_all_bookies),
         )
-        totals_to_use = [str(total) for total in (over_under_totals or DEFAULT_OVER_UNDER_TOTALS)]
+        totals_to_use = [str(total) for total in (over_under_totals or [])]
         if discover_totals:
             discovered_totals = await run_action("discover over/under totals", lambda: discover_over_under_totals(page))
             if discovered_totals:
                 totals_to_use = [str(total) for total in discovered_totals]
-        defaults = [str(total) for total in DEFAULT_OVER_UNDER_TOTALS]
-        totals_to_use = list(dict.fromkeys(totals_to_use + defaults))
         over_under_markets = {}
-        for total in totals_to_use:
-            odds = await run_action(
-                f"over/under odds (+{total})", lambda total=total: extract_over_under_odds(page, total, activate_all_bookies)
-            )
-            over_under_markets[str(total)] = odds
+        if totals_to_use:
+            for total in totals_to_use:
+                odds = await run_action(
+                    f"over/under odds (+{total})",
+                    lambda total=total: extract_over_under_odds(page, total, activate_all_bookies),
+                )
+                over_under_markets[str(total)] = odds
+        else:
+            logger.info("Skipping over/under scraping; no totals configured or discovered for %s", league_name)
 
         scraped_at = current_timestamp()
         data = {

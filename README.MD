@@ -9,7 +9,7 @@ Python rewrite of the Odds Portal CLI: scrape historical or upcoming soccer odds
 - Export JSON payloads directly to disk or upload them to S3.
 - Randomised Playwright fingerprints + retries that mimic the original Node.js behaviour.
 - Rich-powered tables for listing leagues / formats and structured logging.
-- NBA season pages are supported via the `nba-1` league key (over/under totals are auto-discovered).
+- NBA season pages are supported via the `nba-1` league key (over/under totals rely on discovery; soccer defaults like 1.5/2.5/3.5 are skipped).
 
 ## Requirements
 
