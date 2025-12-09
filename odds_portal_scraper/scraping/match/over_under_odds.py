@@ -11,7 +11,13 @@ from ...logger import logger
 from ..shared.activate_all_bookies_filter import activate_all_bookies_filter
 from ..shared.dispatch_click import dispatch_click
 
-MARKET_TABS_SELECTOR = "div.hide-menu li >> div:has-text('Over/Under')"
+MARKET_TABS_SELECTORS = (
+    "button[role='tab']:has-text('Over/Under')",
+    "a[role='tab']:has-text('Over/Under')",
+    "div.hide-menu li >> :is(div,a,span):has-text('Over/Under')",
+    "nav :is(div,a,span):has-text('Over/Under')",
+    "text=Over/Under",
+)
 SPECIFIC_MARKET_SELECTOR = 'div[data-testid="over-under-collapsed-option-box"]'
 ROW_SELECTOR = 'div[data-testid="over-under-expanded-row"]'
 WAIT_SELECTOR = f"{ROW_SELECTOR} p.odds-text"
@@ -88,7 +94,7 @@ async def extract_over_under_odds(page: Page, total: str, activate_all: bool = T
 
 
 async def _prepare_market(page: Page, total: str, wanted_label: str, activate_all: bool) -> None:
-    tab = page.locator(MARKET_TABS_SELECTOR).first
+    tab = await _find_over_under_tab(page)
     await dispatch_click(tab)
     logger.info("click successful, waiting for market options to load...")
     if activate_all:
@@ -178,13 +184,13 @@ async def _read_odds_text(container) -> str | None:
 
 async def discover_over_under_totals(page: Page) -> List[str]:
     """Return all totals shown in the Over/Under selector boxes."""
-    tab = page.locator(MARKET_TABS_SELECTOR).first
-    try:
-        await tab.wait_for(state="visible", timeout=6_000)
-    except PlaywrightTimeoutError:
-        logger.warning("Over/Under tab never became visible; skipping totals discovery.")
-        return []
+    tab = await _find_over_under_tab(page)
     await dispatch_click(tab)
+    try:
+        await page.wait_for_selector(SPECIFIC_MARKET_SELECTOR, timeout=6_000)
+    except PlaywrightTimeoutError:
+        logger.warning("Over/Under options never became visible; skipping totals discovery.")
+        return []
     options = await page.query_selector_all(SPECIFIC_MARKET_SELECTOR)
     totals: List[str] = []
     for option in options:
@@ -196,6 +202,50 @@ async def discover_over_under_totals(page: Page) -> List[str]:
     if not unique:
         logger.warning("No over/under totals discovered on page")
     return unique
+
+
+async def _find_over_under_tab(page: Page):
+    candidates = []
+
+    async def _expand_more_menu() -> None:
+        """Some layouts hide tabs behind a 'More' toggle; try to reveal it."""
+        more = page.locator("button:has-text('More'), a:has-text('More'), div:has-text('More')").first
+        try:
+            if await more.count() > 0:
+                await more.scroll_into_view_if_needed()
+                await dispatch_click(more)
+                await page.wait_for_timeout(250)
+        except Exception:
+            pass
+
+    await _expand_more_menu()
+
+    for selector in MARKET_TABS_SELECTORS:
+        locator = page.locator(selector).filter(has_text="Over/Under").first
+        try:
+            await locator.wait_for(state="attached", timeout=4_000)
+            is_visible = False
+            try:
+                is_visible = await locator.is_visible()
+            except Exception:
+                pass
+            if is_visible:
+                return locator
+            candidates.append(locator)
+        except PlaywrightTimeoutError:
+            continue
+
+    # Nothing visible; try expanding the menu once more and return the first attached candidate.
+    if candidates:
+        await _expand_more_menu()
+        fallback = candidates[0]
+        try:
+            await fallback.scroll_into_view_if_needed()
+        except Exception:
+            pass
+        return fallback
+
+    raise PlaywrightTimeoutError(f"Over/Under tab not visible with selectors {MARKET_TABS_SELECTORS}")
 
 
 def _extract_total_from_label(label: str | None) -> str | None:
