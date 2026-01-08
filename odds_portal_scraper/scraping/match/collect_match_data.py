@@ -10,7 +10,7 @@ from playwright.async_api import Page
 
 from ...logger import logger
 from ..shared.set_odds_format import set_odds_format
-from .collect_match_links import collect_match_links
+from .collect_match_links import collect_match_items
 from .scrape_match import scrape_match
 
 
@@ -45,10 +45,11 @@ async def collect_match_data(
     over_under_range: tuple[float, float] | None = None,
 ) -> AsyncGenerator[Dict, None]:
     await set_odds_format(page, odds_format)
-    links = await collect_match_links(page, limit)
+    items = await collect_match_items(page, limit, league_name=league_name)
     should_throttle = False
 
-    for link in links:
+    for item in items:
+        link = item["link"]
         if should_throttle:
             await _wait_for_throttle(page, throttle)
         should_throttle = True
@@ -62,6 +63,7 @@ async def collect_match_data(
                     "all_bookies": activate_all_bookies,
                     "skip_existing_dir": skip_existing_dir,
                     "over_under_range": over_under_range,
+                    "section": item.get("section"),
                 },
             )
             if result is None:

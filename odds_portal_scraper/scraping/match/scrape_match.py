@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import unicodedata
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -45,6 +47,15 @@ def _merge_retry(defaults: Dict, overrides: Optional[Dict]) -> Dict:
     return merged
 
 
+def _slugify_section(value: str) -> str:
+    normalized = unicodedata.normalize("NFKD", value)
+    normalized = normalized.encode("ascii", "ignore").decode("ascii")
+    normalized = normalized.lower()
+    normalized = re.sub(r"[^a-z0-9\s-]", "", normalized)
+    normalized = re.sub(r"[\s_-]+", "-", normalized).strip("-")
+    return normalized
+
+
 async def scrape_match(
     page: Page,
     link: str,
@@ -62,6 +73,8 @@ async def scrape_match(
     run_action = create_action_runner(page, action_delay_ms, action_retry, humanizer)
     activate_all_bookies = bool(opts.get("all_bookies", True))
     skip_existing_dir = opts.get("skip_existing_dir")
+    section = opts.get("section")
+    section_slug = _slugify_section(section) if isinstance(section, str) else ""
     league_default_totals = LEAGUE_DEFAULT_OVER_UNDER_TOTALS.get(league_name, DEFAULT_OVER_UNDER_TOTALS)
     over_under_totals = opts.get("over_under_totals", league_default_totals)
     discover_totals = bool(opts.get("discover_over_under_totals")) or league_name in AUTO_DISCOVER_OVER_UNDER_LEAGUES
@@ -75,6 +88,8 @@ async def scrape_match(
         metadata = await run_action("match metadata", lambda: extract_match_metadata(page))
         iso_date = metadata.get("date") or "unknown-date"
         file_name = f"{iso_date}--{metadata['homeTeam']}-{metadata['awayTeam']}.json"
+        if section_slug:
+            file_name = f"{section_slug}/{file_name}"
         if skip_existing_path:
             destination = skip_existing_path / file_name
             if destination.exists():
@@ -146,6 +161,7 @@ async def scrape_match(
     except Exception as exc:
         logger.error("extracting data for %s: %s", url, exc)
         raise
+
 
 def _total_in_range(value: str, lower: float, upper: float) -> bool:
     try:

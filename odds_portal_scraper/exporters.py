@@ -64,6 +64,7 @@ def export_to_dir(directory: str | Path, *, skip_existing: bool = False) -> Call
         payload = json.dumps(data, ensure_ascii=False, indent=2)
 
         def _write() -> None:
+            destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_text(payload, encoding="utf-8")
 
         await asyncio.to_thread(_write)
